@@ -5,6 +5,7 @@ import (
 
 	"charm.land/bubbles/v2/list"
 	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type state int
@@ -21,6 +22,8 @@ type model struct {
 	cursor          int
 	selected        map[int]struct{}
 	selectedCommand string
+	width           int
+	height          int
 }
 
 type Tui struct {
@@ -56,6 +59,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.list.SetSize(msg.Width, msg.Height)
+		m.width = msg.Width
+		m.height = msg.Height
 		return m, nil
 	}
 
@@ -84,7 +89,35 @@ func (m model) View() tea.View {
 	case listView:
 		return tea.NewView(m.list.View())
 	case detailView:
-		return tea.NewView(m.selectedCommand)
+		termWidth := m.width
+		topHeight := m.height - 2
+
+		leftWidth := termWidth * 50 / 100
+		rightWidth := termWidth - leftWidth
+
+		left := lipgloss.NewStyle().
+			Width(leftWidth).
+			Height(topHeight).
+			Render(m.selectedCommand)
+
+		right := lipgloss.NewStyle().
+			Width(rightWidth).
+			Height(topHeight).
+			Render("Option")
+
+		topRow := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
+
+		top := lipgloss.NewStyle().
+			Width(m.width).
+			Height(m.height - 2).
+			Render(topRow)
+
+		bottom := lipgloss.NewStyle().
+			Width(m.width).
+			Height(2).
+			Render(fmt.Sprintf("width: %d", m.width))
+
+		return tea.NewView(lipgloss.JoinVertical(lipgloss.Left, top, bottom))
 	default:
 		panic("invalid state")
 	}
