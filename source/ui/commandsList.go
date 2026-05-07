@@ -33,8 +33,22 @@ func UpdateList(msg tea.Msg, m model) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "enter":
 			m.selectedCommand = m.list.SelectedItem().(item).Title()
-
 			m.state = detailView
+			m.details.SetOptions([]option{
+				{
+					title:       "Run",
+					description: "run",
+				},
+				{
+					title:       "Build",
+					description: "build",
+				},
+				{
+					title:       "Test",
+					description: "test",
+				},
+			})
+
 			return m, nil
 		}
 	}

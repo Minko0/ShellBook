@@ -18,6 +18,7 @@ const (
 type model struct {
 	state           state
 	list            list.Model
+	details         DetailsModel
 	initialCommands []string
 	cursor          int
 	selected        map[int]struct{}
@@ -46,6 +47,7 @@ func (t *Tui) Run() {
 func initialModel(commands []string) model {
 	return model{
 		list:            CreateListModel(commands),
+		details:         CreateDetails(),
 		initialCommands: commands,
 		selected:        make(map[int]struct{}),
 	}
@@ -79,6 +81,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		}
+		cmd := m.details.UpdateDetails(msg)
+		return m, cmd
 	}
 
 	return m, nil
@@ -89,23 +93,7 @@ func (m model) View() tea.View {
 	case listView:
 		return tea.NewView(m.list.View())
 	case detailView:
-		termWidth := m.width
-		topHeight := m.height - 2
-
-		leftWidth := termWidth * 50 / 100
-		rightWidth := termWidth - leftWidth
-
-		left := lipgloss.NewStyle().
-			Width(leftWidth).
-			Height(topHeight).
-			Render(m.selectedCommand)
-
-		right := lipgloss.NewStyle().
-			Width(rightWidth).
-			Height(topHeight).
-			Render("Option")
-
-		topRow := lipgloss.JoinHorizontal(lipgloss.Top, left, right)
+		topRow := m.details.View(m.width, m.height)
 
 		top := lipgloss.NewStyle().
 			Width(m.width).

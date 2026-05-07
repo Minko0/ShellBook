@@ -71,3 +71,10 @@ func GetCommands() []string {
 
 	return commands
 }
+
+type CommandOption struct {
+}
+
+func GetOptions(command string) {
+
+}
