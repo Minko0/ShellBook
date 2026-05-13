@@ -7,13 +7,15 @@ import (
 )
 
 type DetailsModel struct {
-	list    list.Model
-	options []option
+	list           list.Model
+	options        []option
+	selectedOption *option
 }
 
 type option struct {
-	title       string
-	description string
+	title          string
+	description    string
+	selectedOption *option
 }
 
 func (i option) Title() string       { return i.title }
@@ -22,21 +24,39 @@ func (i option) FilterValue() string { return i.title }
 
 func CreateDetails() DetailsModel {
 	optionsList := list.New([]list.Item{}, list.NewDefaultDelegate(), 80, 40)
-	return DetailsModel{optionsList, []option{}}
+	return DetailsModel{optionsList, []option{}, nil}
 }
 
 func (details *DetailsModel) SetOptions(options []option) {
 	details.options = options
+	details.selectedOption = &options[0]
 	items := make([]list.Item, 0)
 	for _, o := range options {
 		items = append(items, o)
 	}
 	details.list.SetItems(items)
+
+	if len(options) == 0 {
+		details.selectedOption = nil
+	} else {
+		details.selectedOption = &options[0]
+	}
 }
 
 func (details *DetailsModel) UpdateDetails(msg tea.Msg) tea.Cmd {
+	previousIndex := details.list.Index()
+
 	var cmd tea.Cmd
 	details.list, cmd = details.list.Update(msg)
+
+	currentIndex := details.list.Index()
+	if currentIndex != previousIndex {
+		selected := details.list.SelectedItem()
+		if selectedOption, ok := selected.(option); ok {
+			details.selectedOption = &selectedOption
+		}
+	}
+
 	return cmd
 }
 
@@ -47,10 +67,17 @@ func (details *DetailsModel) View(width int, height int) string {
 	leftWidth := termWidth * 50 / 100
 	rightWidth := termWidth - leftWidth
 
+	details.list.SetSize(rightWidth, topHeight)
+
+	option := ""
+	if details.selectedOption != nil {
+		option = details.selectedOption.title
+	}
+
 	left := lipgloss.NewStyle().
 		Width(leftWidth).
 		Height(topHeight).
-		Render("Option")
+		Render(option)
 
 	right := lipgloss.NewStyle().
 		Width(rightWidth).
